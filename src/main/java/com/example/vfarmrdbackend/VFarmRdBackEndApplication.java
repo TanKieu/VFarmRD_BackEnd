@@ -25,6 +25,10 @@ public class VFarmRdBackEndApplication {
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowedHeaders("*")
                         .allowedOrigins("*");
+                registry.addMapping("/**")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowedHeaders("*")
+                        .allowedOrigins("http://oggycute.tplinkdns.com:31700");
             }
         };
     }
