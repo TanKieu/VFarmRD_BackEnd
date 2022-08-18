@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.vfarmrdbackend.model.task.Task;
+
 import com.example.vfarmrdbackend.payload.task.TaskCreateRequest;
 import com.example.vfarmrdbackend.payload.task.TaskUpdateRequest;
 import com.example.vfarmrdbackend.payload.others.MessageResponse;
@@ -37,7 +37,7 @@ public class TaskController {
 
     @GetMapping("/tasks")
     @PreAuthorize("hasAuthority('manager') or hasAuthority('staff')")
-    public ResponseEntity<?> getAllTasks(@RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<?> getAllTasks(@RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             List<TaskGetResponse> listTasks = taskService.getAllTasks("%", jwt);
             if (listTasks != null) {
@@ -54,15 +54,10 @@ public class TaskController {
 
     @GetMapping("/tasks/{task_id}")
     @PreAuthorize("hasAuthority('staff') or hasAuthority('manager')")
-    public ResponseEntity<?> getTaskByTask_id(@PathVariable("task_id") int task_id) {
+    public ResponseEntity<?> getTaskByTask_id(@PathVariable("task_id") int task_id,
+                                              @RequestHeader(required = false, value = "Authorization") String jwt) {
         try {
-            Task task = taskService.getTaskByTask_id(task_id);
-            if (task != null) {
-                return ResponseEntity.status(HttpStatus.OK).body(task);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        "Can't found any task!");
-            }
+            return ResponseEntity.status(HttpStatus.OK).body(taskService.getTaskByTask_id(task_id, jwt));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new MessageResponse("Lỗi", "Hệ thống đã gặp sự cố!"));
@@ -72,7 +67,7 @@ public class TaskController {
     @PostMapping("/tasks")
     @PreAuthorize("hasAuthority('manager')")
     public ResponseEntity<?> createTask(@RequestBody TaskCreateRequest taskCreateRequest,
-            @RequestHeader("Authorization") String jwt) {
+            @RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             taskService.createTask(taskCreateRequest, jwt);
             return ResponseEntity.status(HttpStatus.OK).body("Create Task successfully!!");
@@ -85,7 +80,7 @@ public class TaskController {
     @PutMapping("/tasks/{task_id}")
     @PreAuthorize("hasAuthority('manager')")
     public ResponseEntity<?> updateTask(@PathVariable("task_id") int task_id,
-            @RequestBody TaskUpdateRequest taskUpdateRequest, @RequestHeader("Authorization") String jwt) {
+            @RequestBody TaskUpdateRequest taskUpdateRequest, @RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             if (taskService.updateTask(task_id, taskUpdateRequest, jwt)) {
                 return ResponseEntity.status(HttpStatus.OK).body("Update task successfully!");
@@ -101,7 +96,7 @@ public class TaskController {
     @DeleteMapping("/tasks/{task_id}")
     @PreAuthorize("hasAuthority('manager')")
     public ResponseEntity<?> deleteTask(@PathVariable("task_id") int task_id,
-            @RequestHeader("Authorization") String jwt) {
+            @RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             if (taskService.deleteTask(task_id, jwt)) {
                 return ResponseEntity.status(HttpStatus.OK).body("Delete task successfully!");
@@ -121,7 +116,7 @@ public class TaskController {
             @RequestParam(defaultValue = "none", required = false) String to_date,
             @RequestParam(defaultValue = "0", required = false) int month,
             @RequestParam(defaultValue = "0", required = false) int year,
-            @RequestHeader("Authorization") String jwt) {
+            @RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             if (!from_date.equals("none") && !to_date.equals("none")) {
                 return ResponseEntity.status(HttpStatus.OK).body(
@@ -141,7 +136,8 @@ public class TaskController {
 
     @GetMapping("/tasks/filter")
     @PreAuthorize("hasAuthority('manager') or hasAuthority('staff')")
-    public ResponseEntity<?> getAllTasksWithProject_idAndUser_id(@RequestHeader("Authorization") String jwt,
+    public ResponseEntity<?> getAllTasksWithProject_idAndUser_id(
+            @RequestHeader( required = false, value = "Authorization") String jwt,
             @RequestParam(defaultValue = "0", required = false) int project_id,
             @RequestParam(defaultValue = "0", required = false) int user_id,
             @RequestParam(defaultValue = "", required = false) String task_status) {
@@ -167,9 +163,9 @@ public class TaskController {
     }
 
     @PutMapping("/tasks/{task_id}/change-status-is-done")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAuthority('manager') or hasAuthority('staff')")
     public ResponseEntity<?> setTaskStatusIfDone(@PathVariable("task_id") int task_id,
-            @RequestHeader("Authorization") String jwt) {
+            @RequestHeader( required = false, value = "Authorization") String jwt) {
         try {
             if (taskService.setTaskStatusIfDone(task_id, jwt)) {
                 return ResponseEntity.status(HttpStatus.OK).body("Set task status successfully!");

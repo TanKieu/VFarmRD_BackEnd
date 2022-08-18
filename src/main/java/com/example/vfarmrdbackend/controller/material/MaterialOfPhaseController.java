@@ -72,7 +72,7 @@ public class MaterialOfPhaseController {
     @PreAuthorize("hasAuthority('manager') or hasAuthority('staff')")
     public ResponseEntity<?> updateMaterialOfPhase(
             @RequestBody MaterialOfPhaseUpdateRequest materialOfPhaseUpdateRequest,
-            @RequestHeader("Authorization") String jwt) {
+            @RequestHeader(required = false, value = "Authorization") String jwt) {
         try {
             if (materialOfPhaseService.updateMaterialOfPhase(materialOfPhaseUpdateRequest, jwt)) {
                 return ResponseEntity.status(HttpStatus.OK).body(

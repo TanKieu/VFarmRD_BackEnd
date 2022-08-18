@@ -92,12 +92,14 @@ public class TaskService {
         for (int i = 0; i < listTasks.size(); i++) {
             Task task = listTasks.get(i);
             TaskGetResponse newTaskInfo = new TaskGetResponse();
+            User user = userRepository.getUserByUser_id(task.getUser_id());
             ProjectGetResponse project = projectService.getProjectByProject_id(task.getProject_id(), jwt);
             newTaskInfo.setTask_id(task.getTask_id());
             newTaskInfo.setTask_name(task.getTask_name());
             newTaskInfo.setUser_id(task.getUser_id());
-            newTaskInfo.setUser_name(requestUser.getUser_name());
-            newTaskInfo.setUser_role(requestUser.getRole_name());
+            newTaskInfo.setManager_user_id(project.getCreated_user_id());
+            newTaskInfo.setUser_name(user.getUser_name());
+            newTaskInfo.setUser_role(user.getRole_name());
             newTaskInfo.setProject_id(task.getProject_id());
             newTaskInfo.setProject_name(project.getProject_name());
             newTaskInfo.setCreated_date(task.getCreated_date());
@@ -121,6 +123,7 @@ public class TaskService {
             newTaskInfo.setTask_id(task.getTask_id());
             newTaskInfo.setTask_name(task.getTask_name());
             newTaskInfo.setUser_id(task.getUser_id());
+            newTaskInfo.setManager_user_id(project.getCreated_user_id());
             newTaskInfo.setUser_name(user.getUser_name());
             newTaskInfo.setUser_role(user.getRole_name());
             newTaskInfo.setProject_id(task.getProject_id());
@@ -146,6 +149,7 @@ public class TaskService {
             newTaskInfo.setTask_id(task.getTask_id());
             newTaskInfo.setTask_name(task.getTask_name());
             newTaskInfo.setUser_id(task.getUser_id());
+            newTaskInfo.setManager_user_id(project.getCreated_user_id());
             newTaskInfo.setUser_name(user.getUser_name());
             newTaskInfo.setUser_role(user.getRole_name());
             newTaskInfo.setProject_id(task.getProject_id());
@@ -161,7 +165,7 @@ public class TaskService {
     }
 
     public List<TaskGetResponse> getAllTasksWithProject_idAndUser_id(int project_id, int user_id, String task_status,
-            String jwt) {
+                                                                     String jwt) {
         List<Task> listTasks = taskRepository.getAllTasksWithProject_idAndUser_id(project_id, user_id,
                 "%" + task_status + "%");
         List<TaskGetResponse> listTasksResponse = new ArrayList<>();
@@ -173,6 +177,7 @@ public class TaskService {
             newTaskInfo.setTask_id(task.getTask_id());
             newTaskInfo.setTask_name(task.getTask_name());
             newTaskInfo.setUser_id(task.getUser_id());
+            newTaskInfo.setManager_user_id(project.getCreated_user_id());
             newTaskInfo.setUser_name(user.getUser_name());
             newTaskInfo.setUser_role(user.getRole_name());
             newTaskInfo.setProject_id(task.getProject_id());
@@ -187,8 +192,25 @@ public class TaskService {
         return listTasksResponse;
     }
 
-    public Task getTaskByTask_id(int task_id) {
-        return taskRepository.getTaskByTask_id(task_id);
+    public TaskGetResponse getTaskByTask_id(int task_id, String jwt) {
+        Task task = taskRepository.getTaskByTask_id(task_id);
+        TaskGetResponse newTaskInfo = new TaskGetResponse();
+        User user = userRepository.getUserByUser_id(task.getUser_id());
+        ProjectGetResponse project = projectService.getProjectByProject_id(task.getProject_id(), jwt);
+        newTaskInfo.setTask_id(task.getTask_id());
+        newTaskInfo.setTask_name(task.getTask_name());
+        newTaskInfo.setUser_id(task.getUser_id());
+        newTaskInfo.setManager_user_id(project.getCreated_user_id());
+        newTaskInfo.setUser_name(user.getUser_name());
+        newTaskInfo.setUser_role(user.getRole_name());
+        newTaskInfo.setProject_id(task.getProject_id());
+        newTaskInfo.setProject_name(project.getProject_name());
+        newTaskInfo.setCreated_date(task.getCreated_date());
+        newTaskInfo.setStart_date(task.getStart_date());
+        newTaskInfo.setEstimated_date(task.getEstimated_date());
+        newTaskInfo.setTask_status(task.getTask_status());
+        newTaskInfo.setDescription(task.getDescription());
+        return newTaskInfo;
     }
 
     public void createTask(TaskCreateRequest taskCreateRequest, String jwt) {
@@ -269,7 +291,7 @@ public class TaskService {
     }
 
     public List<TaskStatisticsFromDateToDateResponse> getTaskStatisticsFromDateToDate(String jwt, String from_date,
-            String to_date) {
+                                                                                      String to_date) {
         try {
             LocalDate start = LocalDate.parse(from_date.split(" ")[0]);
             LocalDate end = LocalDate.parse(to_date.split(" ")[0]);
@@ -325,6 +347,12 @@ public class TaskService {
         if (updateTask != null) {
             updateTask.setTask_status("done");
             taskRepository.save(updateTask);
+            ProjectGetResponse project = projectService.getProjectByProject_id(updateTask.getProject_id(), jwt);
+            User user = userRepository.getUserByUser_id(updateTask.getUser_id());
+            notificationService.createNotification(new Notification(project.getCreated_user_id(),
+                    "Thông Báo",
+                    user.getFullname() + " đã hoàn thành công việc " + updateTask.getTask_name(),
+                    new Date()));
             logService.createLog(new Log(JwtService.getUser_idFromToken(jwt),
                     "TASK",
                     "UPDATE",
